@@ -14,11 +14,9 @@ const forwardWell = document.getElementById('forwardWell');
 const backCount = document.getElementById('backCount');
 const forwardCount = document.getElementById('forwardCount');
 const pageContent = document.getElementById('pageContent');
+const frameWrap = document.getElementById('frameWrap');
 const pageFrame = document.getElementById('pageFrame');
-const frameBlocked = document.getElementById('frameBlocked');
-const blockedPageName = document.getElementById('blockedPageName');
-
-let loadTimer = null; // detects whether the iframe actually rendered
+const openExternal = document.getElementById('openExternal');
 
 // Turns "wikipedia.org/stacks" into a real, loadable URL
 function normalizeUrl(value) {
@@ -73,47 +71,16 @@ function renderStack(stack, wellEl, emptyMessage) {
   });
 }
 
-// Tries to actually show the live page. If the site refuses to be
-// embedded (X-Frame-Options / CSP frame-ancestors), browsers usually
-// still fire a 'load' event but leave the frame's document empty or
-// swap it back to about:blank. We can detect that: a successfully
-// loaded cross-origin site throws when we try to read its document
-// (blocked by same-origin policy) — a blocked/empty frame does NOT
-// throw, because it's still on about:blank/an error page (same-origin
-// with us). That's the signal we use below.
+// Browsers deliberately don't let a page's JavaScript know *why* an
+// iframe failed to render another site (that's a security boundary,
+// not a bug we can code around). So instead of guessing, we always
+// attempt the live preview AND always offer a guaranteed "open in a
+// real tab" link next to it — that link works 100% of the time, even
+// for sites that refuse to be embedded.
 function loadPreview(page) {
-  clearTimeout(loadTimer);
-  pageFrame.hidden = true;
-  frameBlocked.hidden = true;
-
-  const showBlocked = () => {
-    pageFrame.hidden = true;
-    frameBlocked.hidden = false;
-    blockedPageName.textContent = page;
-  };
-
-  const showLoaded = () => {
-    pageFrame.hidden = false;
-    frameBlocked.hidden = true;
-  };
-
-  pageFrame.onload = () => {
-    clearTimeout(loadTimer);
-    try {
-      const doc = pageFrame.contentDocument || pageFrame.contentWindow.document;
-      const isBlank = !doc || doc.location.href === 'about:blank' || doc.body.innerHTML.trim() === '';
-      isBlank ? showBlocked() : showLoaded();
-    } catch (err) {
-      // Access denied = the frame is on a real cross-origin page = it loaded fine
-      showLoaded();
-    }
-  };
-
-  pageFrame.src = normalizeUrl(page);
-
-  // Absolute fallback: if 'load' never fires at all (connection refused,
-  // DNS failure, very slow network), treat it as unavailable.
-  loadTimer = setTimeout(showBlocked, 4000);
+  const url = normalizeUrl(page);
+  pageFrame.src = url;
+  openExternal.href = url;
 }
 
 function render() {
@@ -128,12 +95,11 @@ function render() {
 
   if (currentPage) {
     pageContent.hidden = true;
+    frameWrap.hidden = false;
     loadPreview(currentPage);
   } else {
-    clearTimeout(loadTimer);
     pageContent.hidden = false;
-    pageFrame.hidden = true;
-    frameBlocked.hidden = true;
+    frameWrap.hidden = true;
     pageFrame.src = 'about:blank';
   }
 }
