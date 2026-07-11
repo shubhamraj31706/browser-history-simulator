@@ -74,27 +74,46 @@ function renderStack(stack, wellEl, emptyMessage) {
 }
 
 // Tries to actually show the live page. If the site refuses to be
-// embedded (X-Frame-Options / CSP frame-ancestors), we fall back to an
-// explanation panel — the page still stays in history either way.
+// embedded (X-Frame-Options / CSP frame-ancestors), browsers usually
+// still fire a 'load' event but leave the frame's document empty or
+// swap it back to about:blank. We can detect that: a successfully
+// loaded cross-origin site throws when we try to read its document
+// (blocked by same-origin policy) — a blocked/empty frame does NOT
+// throw, because it's still on about:blank/an error page (same-origin
+// with us). That's the signal we use below.
 function loadPreview(page) {
   clearTimeout(loadTimer);
   pageFrame.hidden = true;
   frameBlocked.hidden = true;
 
-  pageFrame.onload = () => {
-    clearTimeout(loadTimer);
-    pageFrame.hidden = false;
-    frameBlocked.hidden = true;
-  };
-  pageFrame.src = normalizeUrl(page);
-
-  // Sites that block embedding never fire a normal load inside — if
-  // nothing renders within this window, assume it's blocked.
-  loadTimer = setTimeout(() => {
+  const showBlocked = () => {
     pageFrame.hidden = true;
     frameBlocked.hidden = false;
     blockedPageName.textContent = page;
-  }, 1800);
+  };
+
+  const showLoaded = () => {
+    pageFrame.hidden = false;
+    frameBlocked.hidden = true;
+  };
+
+  pageFrame.onload = () => {
+    clearTimeout(loadTimer);
+    try {
+      const doc = pageFrame.contentDocument || pageFrame.contentWindow.document;
+      const isBlank = !doc || doc.location.href === 'about:blank' || doc.body.innerHTML.trim() === '';
+      isBlank ? showBlocked() : showLoaded();
+    } catch (err) {
+      // Access denied = the frame is on a real cross-origin page = it loaded fine
+      showLoaded();
+    }
+  };
+
+  pageFrame.src = normalizeUrl(page);
+
+  // Absolute fallback: if 'load' never fires at all (connection refused,
+  // DNS failure, very slow network), treat it as unavailable.
+  loadTimer = setTimeout(showBlocked, 4000);
 }
 
 function render() {
