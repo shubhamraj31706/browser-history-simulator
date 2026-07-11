@@ -13,6 +13,14 @@ const backWell = document.getElementById('backWell');
 const forwardWell = document.getElementById('forwardWell');
 const backCount = document.getElementById('backCount');
 const forwardCount = document.getElementById('forwardCount');
+const pageContent = document.getElementById('pageContent');
+const pageFrame = document.getElementById('pageFrame');
+
+// Turns "wikipedia.org/stacks" into a real, loadable URL
+function normalizeUrl(value) {
+  if (/^https?:\/\//i.test(value)) return value;
+  return 'https://' + value;
+}
 
 // ----- Core stack operations -----
 
@@ -70,6 +78,16 @@ function render() {
   renderStack(backStack, backWell, 'empty — nothing to go back to');
   renderStack(forwardStack, forwardWell, 'empty — go back first');
   urlInput.value = '';
+
+  if (currentPage) {
+    pageContent.hidden = true;
+    pageFrame.hidden = false;
+    pageFrame.src = normalizeUrl(currentPage);
+  } else {
+    pageContent.hidden = false;
+    pageFrame.hidden = true;
+    pageFrame.src = 'about:blank';
+  }
 }
 
 // ----- Event listeners -----
