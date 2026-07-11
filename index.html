@@ -12,7 +12,6 @@
 <body>
 
   <header class="page-header">
-    <p class="eyebrow">DSA Summer Training Project</p>
     <h1>Browser History Simulator</h1>
     <p class="subtitle">Two stacks, working the way your real browser's Back and Forward buttons do — every page you visit prints a ticket onto the stack.</p>
   </header>
@@ -38,13 +37,15 @@
         </form>
       </div>
 
-      <div class="page-viewport">
+      <div class="page-viewport" id="pageViewport">
         <div class="page-content" id="pageContent">
           <span class="page-glyph">◎</span>
           <p class="page-eyebrow">now viewing</p>
           <h2 id="currentPage">about:blank</h2>
           <p class="page-hint">Type a page above and hit <strong>Go</strong> to start building history.</p>
+          <p class="page-hint page-hint-small">Note: a few sites (Google, banking, etc.) block being shown inside another page and won't preview here — that's their restriction, not this app's.</p>
         </div>
+        <iframe id="pageFrame" class="page-frame" title="Live page preview" hidden></iframe>
       </div>
     </div>
 
@@ -56,7 +57,7 @@
           <h3>Back Stack</h3>
           <span class="count" id="backCount">0</span>
         </div>
-        <p class="stack-caption">pop() → go back</p>
+        <p class="stack-caption">holds pages you can return to</p>
         <div class="ticket-well" id="backWell">
           <p class="empty-note">empty — nothing to go back to</p>
         </div>
@@ -68,14 +69,12 @@
           <h3>Forward Stack</h3>
           <span class="count" id="forwardCount">0</span>
         </div>
-        <p class="stack-caption">pop() → go forward</p>
+        <p class="stack-caption">holds pages you've stepped back from</p>
         <div class="ticket-well" id="forwardWell">
           <p class="empty-note">empty — go back first</p>
         </div>
       </section>
     </div>
-
-    <p class="footer-note">Built with two JavaScript arrays used strictly as stacks (<code>push()</code> / <code>pop()</code>) — no algorithm, just LIFO order.</p>
   </main>
 
 <script src="script.js"></script>
