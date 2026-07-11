@@ -1,4 +1,3 @@
-// ----- Data structures: two stacks implemented as arrays -----
 let backStack = [];
 let forwardStack = [];
 let currentPage = null; // null = about:blank, no history yet
@@ -71,12 +70,6 @@ function renderStack(stack, wellEl, emptyMessage) {
   });
 }
 
-// Browsers deliberately don't let a page's JavaScript know *why* an
-// iframe failed to render another site (that's a security boundary,
-// not a bug we can code around). So instead of guessing, we always
-// attempt the live preview AND always offer a guaranteed "open in a
-// real tab" link next to it — that link works 100% of the time, even
-// for sites that refuse to be embedded.
 function loadPreview(page) {
   const url = normalizeUrl(page);
   pageFrame.src = url;
@@ -115,5 +108,4 @@ navForm.addEventListener('submit', (e) => {
 backBtn.addEventListener('click', goBack);
 forwardBtn.addEventListener('click', goForward);
 
-// Initial render
 render();
