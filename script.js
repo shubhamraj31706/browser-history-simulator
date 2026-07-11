@@ -15,6 +15,10 @@ const backCount = document.getElementById('backCount');
 const forwardCount = document.getElementById('forwardCount');
 const pageContent = document.getElementById('pageContent');
 const pageFrame = document.getElementById('pageFrame');
+const frameBlocked = document.getElementById('frameBlocked');
+const blockedPageName = document.getElementById('blockedPageName');
+
+let loadTimer = null; // detects whether the iframe actually rendered
 
 // Turns "wikipedia.org/stacks" into a real, loadable URL
 function normalizeUrl(value) {
@@ -69,6 +73,30 @@ function renderStack(stack, wellEl, emptyMessage) {
   });
 }
 
+// Tries to actually show the live page. If the site refuses to be
+// embedded (X-Frame-Options / CSP frame-ancestors), we fall back to an
+// explanation panel — the page still stays in history either way.
+function loadPreview(page) {
+  clearTimeout(loadTimer);
+  pageFrame.hidden = true;
+  frameBlocked.hidden = true;
+
+  pageFrame.onload = () => {
+    clearTimeout(loadTimer);
+    pageFrame.hidden = false;
+    frameBlocked.hidden = true;
+  };
+  pageFrame.src = normalizeUrl(page);
+
+  // Sites that block embedding never fire a normal load inside — if
+  // nothing renders within this window, assume it's blocked.
+  loadTimer = setTimeout(() => {
+    pageFrame.hidden = true;
+    frameBlocked.hidden = false;
+    blockedPageName.textContent = page;
+  }, 1800);
+}
+
 function render() {
   currentPageEl.textContent = currentPage || 'about:blank';
   backBtn.disabled = backStack.length === 0;
@@ -81,11 +109,12 @@ function render() {
 
   if (currentPage) {
     pageContent.hidden = true;
-    pageFrame.hidden = false;
-    pageFrame.src = normalizeUrl(currentPage);
+    loadPreview(currentPage);
   } else {
+    clearTimeout(loadTimer);
     pageContent.hidden = false;
     pageFrame.hidden = true;
+    frameBlocked.hidden = true;
     pageFrame.src = 'about:blank';
   }
 }
